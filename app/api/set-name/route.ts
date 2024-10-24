@@ -3,11 +3,10 @@ import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { parseSiweMessage, createSiweMessage, SiweMessage } from "viem/siwe";
 
-export const providerUrl =
+const providerUrl =
   "https://eth-mainnet.g.alchemy.com/v2/" +
   process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-export const client = createPublicClient({
+const client = createPublicClient({
   chain: mainnet,
   transport: http(providerUrl || ""),
 });
