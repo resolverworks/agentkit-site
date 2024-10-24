@@ -40,6 +40,7 @@ const Toast = ({
     </div>
   );
 };
+
 export default function Home() {
   const [names, setNames] = useState<NameData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +48,7 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
 
   const handleAgentClick = (agent: NameData) => {
-    if (agent.text_records?.url) {
+    if (agent?.text_records?.url) {
       window.open(agent.text_records.url, "_blank");
     } else {
       setToast("This agent has not set a website");
@@ -132,11 +133,13 @@ export default function Home() {
                 <img
                   className="w-[60px] h-[60px] rounded-full"
                   alt={`${name.name} avatar`}
-                  src={name.text_records?.avatar || getDefaultAvatar(name.name)}
+                  src={
+                    name?.text_records?.avatar || getDefaultAvatar(name.name)
+                  }
                 />
                 <div className="text-white">{name.name}.agentkit.eth</div>
                 <p className="text-gray-300 truncate">
-                  {name.text_records?.description ||
+                  {name?.text_records?.description ||
                     "This agent has no description"}
                 </p>
               </div>
