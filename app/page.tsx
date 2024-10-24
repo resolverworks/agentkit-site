@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 interface TextRecords {
   description?: string;
   avatar?: string;
+  url?: string;
 }
 
 interface NameData {
@@ -12,11 +13,46 @@ interface NameData {
   domain: string;
   text_records: TextRecords;
 }
+function getDefaultAvatar(name: string): string {
+  // Sum the character codes of the name to get a deterministic number
+  const sum = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  // Use modulo 3 to get a number between 0-2, then add 1 to get 1-3
+  const avatarNumber = (sum % 3) + 1;
+  return `/avatar-${avatarNumber}.svg`;
+}
+
+// Toast component
+const Toast = ({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 2000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
+      {message}
+    </div>
+  );
+};
 export default function Home() {
   const [names, setNames] = useState<NameData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
+  const handleAgentClick = (agent: NameData) => {
+    if (agent.text_records?.url) {
+      window.open(agent.text_records.url, "_blank");
+    } else {
+      setToast("This agent has not set a website");
+    }
+  };
   useEffect(() => {
     const fetchNames = async () => {
       try {
@@ -38,6 +74,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-start bg-white">
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
       <div className="flex flex-col justify-center w-full items-center bg-white h-screen">
         {/* Header */}
         <div className="flex items-center gap-1 px-4 md:px-10 py-5  w-full absolute top-0 left-0">
@@ -89,12 +126,13 @@ export default function Home() {
             names.map((name, index) => (
               <div
                 key={index}
-                className="flex flex-col gap-2 p-5 bg-[#141519] rounded-xl"
+                className="flex flex-col gap-2 p-5 bg-[#141519] rounded-xl cursor-pointer"
+                onClick={() => handleAgentClick(name)}
               >
                 <img
                   className="w-[60px] h-[60px] rounded-full"
                   alt={`${name.name} avatar`}
-                  src={name.text_records?.avatar || "/avatar1.svg"}
+                  src={name.text_records?.avatar || getDefaultAvatar(name.name)}
                 />
                 <div className="text-white">{name.name}.agentkit.eth</div>
                 <p className="text-gray-300 truncate">

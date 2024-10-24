@@ -14,8 +14,26 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "agentkit",
+  title: "AgentKit.id",
   description: "Build your onchain AI agent",
+  openGraph: {
+    title: "AgentKit.id",
+    description: "Build your onchain AI agent",
+    images: [
+      {
+        url: "/opengraph-image.jpg", // Path to your image in the public directory
+        width: 1200,
+        height: 630,
+        alt: "AgentKit.id",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AgentKit.id",
+    description: "Build your onchain AI agent",
+    images: ["/opengraph-image.jpg"], // Path to your image in the public directory
+  },
 };
 
 export default function RootLayout({
