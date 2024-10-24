@@ -1,4 +1,41 @@
+"use client";
+import { useEffect, useState } from "react";
+
+interface TextRecords {
+  description?: string;
+  avatar?: string;
+}
+
+interface NameData {
+  name: string;
+  address: string;
+  domain: string;
+  text_records: TextRecords;
+}
 export default function Home() {
+  const [names, setNames] = useState<NameData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNames = async () => {
+      try {
+        const response = await fetch("/api/get-names");
+        if (!response.ok) {
+          throw new Error("Failed to fetch names");
+        }
+        const data = await response.json();
+        setNames(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load agents");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNames();
+  }, []);
+
   return (
     <div className="flex flex-col items-start bg-white">
       <div className="flex flex-col justify-center w-full items-center bg-white h-screen">
@@ -41,19 +78,32 @@ export default function Home() {
         <div className="text-3xl text-white font-medium">
           Explore active agents
         </div>
-
-        <div className="flex flex-wrap gap-5 w-full">
-          <div className="flex flex-col gap-2 p-5 flex-1 min-w-[42.5px] max-w-[348px] bg-[#141519] rounded-xl">
-            <img
-              className="w-[60px] h-[60px]"
-              alt="Ellipse"
-              src="/avatar1.svg"
-            />
-            <div className="text-white">ethtrader.agentkit.eth</div>
-            <p className="text-gray-300 truncate">
-              This agent executes trades depending on...
-            </p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 w-full max-w-[1200px]">
+          {loading ? (
+            <div className="text-white">Loading agents...</div>
+          ) : error ? (
+            <div className="text-red-500">{error}</div>
+          ) : names.length === 0 ? (
+            <div className="text-white">No agents found</div>
+          ) : (
+            names.map((name, index) => (
+              <div
+                key={index}
+                className="flex flex-col gap-2 p-5 bg-[#141519] rounded-xl"
+              >
+                <img
+                  className="w-[60px] h-[60px] rounded-full"
+                  alt={`${name.name} avatar`}
+                  src={name.text_records?.avatar || "/avatar1.svg"}
+                />
+                <div className="text-white">{name.name}.agentkit.eth</div>
+                <p className="text-gray-300 truncate">
+                  {name.text_records?.description ||
+                    "This agent has no description"}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

@@ -1,42 +1,48 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import Cors from "micro-cors";
+import { NextRequest, NextResponse } from "next/server";
 import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 import { isAddress } from "viem";
 
-// Define allowed HTTP methods
-type AllowedMethods = "GET" | "HEAD" | "POST" | "OPTIONS";
-
-// Configure CORS
-const cors = Cors({
-  allowMethods: ["GET", "HEAD", "POST", "OPTIONS"] as AllowedMethods[],
-  origin: "*",
-});
-
-// Define error response type
-interface ErrorResponse {
-  error: string;
+// Helper function to handle CORS
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
 }
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse<string | ErrorResponse>
-): Promise<void> => {
-  const { method } = req;
-  let address: string = req.query.address as string;
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders() });
+}
 
-  if (method !== "GET") {
-    res.setHeader("Allow", ["GET"]);
-    res.status(405).end(`Method ${method} Not Allowed`);
-    return;
-  }
+export async function GET(request: NextRequest) {
+  // Add CORS headers to all responses
+  const headers = corsHeaders();
+
+  // Get address from URL parameters
+  const { searchParams } = new URL(request.url);
+  const address = searchParams.get("address");
 
   if (!address) {
-    return res.status(400).json({ error: "Missing address" });
+    return NextResponse.json(
+      { error: "Missing address" },
+      {
+        status: 400,
+        headers,
+      }
+    );
   }
 
-  // check if address is valid using viem
+  // Check if address is valid using viem
   if (!isAddress(address)) {
-    return res.status(400).json({ error: "Invalid wallet address" });
+    return NextResponse.json(
+      { error: "Invalid wallet address" },
+      {
+        status: 400,
+        headers,
+      }
+    );
   }
 
   const nonce = generateSiweNonce();
@@ -51,7 +57,6 @@ const handler = async (
   });
 
   // Save siwe to kv
-
   // Prepare the key-value pair for Cloudflare KV
   const kvKey = `siwe-${address}`;
   const kvPair = [
@@ -61,38 +66,69 @@ const handler = async (
       // You can add expiration or metadata here if needed
     },
   ];
+
   const kvHeaders = {
     Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
     "Content-Type": "application/json",
   };
+
   const kvUrl = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CLOUDFLARE_KV_NAMESPACE_ID}/bulk`;
 
   console.log(kvHeaders);
   console.log(kvPair);
   console.log(kvUrl);
-  // Upload image ID to Cloudflare KV using the bulk endpoint
-  const kvResponse = await fetch(kvUrl, {
-    method: "PUT",
-    headers: kvHeaders,
-    body: JSON.stringify(kvPair),
-  });
 
-  if (!kvResponse.ok) {
-    const errorText = await kvResponse.text();
-    console.error("Failed to upload siwe message to Cloudflare KV:", errorText);
-    return res.status(400).json({ error: "Failed to store siwe message" });
+  try {
+    // Upload message to Cloudflare KV using the bulk endpoint
+    const kvResponse = await fetch(kvUrl, {
+      method: "PUT",
+      headers: kvHeaders,
+      body: JSON.stringify(kvPair),
+    });
+
+    if (!kvResponse.ok) {
+      const errorText = await kvResponse.text();
+      console.error(
+        "Failed to upload siwe message to Cloudflare KV:",
+        errorText
+      );
+      return NextResponse.json(
+        { error: "Failed to store siwe message" },
+        {
+          status: 400,
+          headers,
+        }
+      );
+    }
+
+    const kvResult = await kvResponse.json();
+    if (!kvResult.success) {
+      console.error("Cloudflare KV operation was not successful:", kvResult);
+      return NextResponse.json(
+        { error: "Failed to store siwe message" },
+        {
+          status: 400,
+          headers,
+        }
+      );
+    }
+
+    // Return the message as plain text
+    return new NextResponse(message, {
+      status: 200,
+      headers: {
+        ...headers,
+        "Content-Type": "text/plain",
+      },
+    });
+  } catch (error) {
+    console.error("Error storing SIWE message:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      {
+        status: 500,
+        headers,
+      }
+    );
   }
-
-  const kvResult = await kvResponse.json();
-  if (!kvResult.success) {
-    console.error("Cloudflare KV operation was not successful:", kvResult);
-    return res.status(400).json({ error: "Failed to store siwe message" });
-  }
-
-  // Set the Content-Type header to text/plain
-  res.setHeader("Content-Type", "text/plain");
-  // Return the message as plain text
-  res.status(200).send(message);
-};
-
-export default cors(handler);
+}
