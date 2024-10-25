@@ -97,7 +97,12 @@ export default function Home() {
             <p className="text-xl text-gray-600 text-center">
               Learn how to make AI agents that interact with the blockchain
             </p>
-            <a className="rounded-full px-6 py-2 bg-[#0A0B0D] hover:bg-zinc-700 text-white cursor-pointer ">
+            <a
+              href="https://github.com/resolverworks/agentkit-typescript"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full px-6 py-2 bg-[#0A0B0D] hover:bg-zinc-700 text-white cursor-pointer "
+            >
               Link to docs
             </a>
           </div>
