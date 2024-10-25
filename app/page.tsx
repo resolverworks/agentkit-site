@@ -5,6 +5,7 @@ interface TextRecords {
   description?: string;
   avatar?: string;
   url?: string;
+  publish?: string;
 }
 
 interface NameData {
@@ -129,26 +130,31 @@ export default function Home() {
           ) : names.length === 0 ? (
             <div className="text-white">No agents found</div>
           ) : (
-            names.map((name, index) => (
-              <div
-                key={index}
-                className="flex flex-col gap-2 p-5 bg-[#141519] rounded-xl cursor-pointer"
-                onClick={() => handleAgentClick(name)}
-              >
-                <img
-                  className="w-[60px] h-[60px] rounded-full"
-                  alt={`${name.name} avatar`}
-                  src={
-                    name?.text_records?.avatar || getDefaultAvatar(name.name)
-                  }
-                />
-                <div className="text-white">{name.name}.agentkit.eth</div>
-                <p className="text-gray-300 truncate">
-                  {name?.text_records?.description ||
-                    "This agent has no description"}
-                </p>
-              </div>
-            ))
+            names.map((name, index) => {
+              if (name?.text_records.publish !== "true") {
+                return null;
+              }
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 p-5 bg-[#141519] rounded-xl cursor-pointer"
+                  onClick={() => handleAgentClick(name)}
+                >
+                  <img
+                    className="w-[60px] h-[60px] rounded-full"
+                    alt={`${name.name} avatar`}
+                    src={
+                      name?.text_records?.avatar || getDefaultAvatar(name.name)
+                    }
+                  />
+                  <div className="text-white">{name.name}.agentkit.eth</div>
+                  <p className="text-gray-300 truncate">
+                    {name?.text_records?.description ||
+                      "This agent has no description"}
+                  </p>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
