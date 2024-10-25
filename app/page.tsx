@@ -62,7 +62,12 @@ export default function Home() {
         if (!response.ok) {
           throw new Error("Failed to fetch names");
         }
-        const data = await response.json();
+        let data = await response.json();
+        // filter data to only show agents that have published their agents
+        data = data.filter(
+          (name: NameData) => name?.text_records?.publish === "true"
+        );
+        console.log(data);
         setNames(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load agents");
@@ -131,9 +136,6 @@ export default function Home() {
             <div className="text-white">No agents found</div>
           ) : (
             names.map((name, index) => {
-              if (name?.text_records.publish !== "true") {
-                return null;
-              }
               return (
                 <div
                   key={index}

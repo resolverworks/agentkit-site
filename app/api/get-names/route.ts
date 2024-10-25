@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (response.ok) {
       const data = await response.json();
+      console.log("Fetched names:", data);
       return NextResponse.json(data, { headers });
     } else {
       const errorText = await response.text();
