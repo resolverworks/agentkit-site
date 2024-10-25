@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
   // check if name is owned by someone else
   const nameCheck = await fetch(
-    `https://namestone.xyz/api/public_v1/gsearch-names?domain=agentkit.eth&name=${body.name}&exact_match=1`,
+    `https://namestone.xyz/api/public_v1/search-names?domain=agentkit.eth&name=${body.name}&exact_match=1`,
     {
       method: "GET",
       headers: {
@@ -138,9 +138,8 @@ export async function POST(req: NextRequest) {
     }
   );
   if (!nameCheck.ok) {
-    const errorMsg = await nameCheck.json();
     return NextResponse.json(
-      { error: errorMsg },
+      { error: "Error checking name" },
       {
         status: 405,
         headers,
