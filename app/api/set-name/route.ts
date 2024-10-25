@@ -126,6 +126,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // check if name is owned by someone else
+  const nameCheck = await fetch(
+    `https://namestone.xyz/api/public_v1/gsearch-names?domain=agentkit.eth&name=${body.name}&exact_match=1`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+    }
+  );
+  if (!nameCheck.ok) {
+    const errorMsg = await nameCheck.json();
+    return NextResponse.json(
+      { error: errorMsg },
+      {
+        status: 405,
+        headers,
+      }
+    );
+  }
+  const nameCheckData = await nameCheck.json();
+  if (
+    nameCheckData.length > 0 &&
+    nameCheckData[0].address.toLowerCase() !== body.address.toLowerCase()
+  ) {
+    return NextResponse.json(
+      { error: "Name taken by another wallet" },
+      {
+        status: 405,
+        headers,
+      }
+    );
+  }
+
+  // Set name
   try {
     const response = await fetch(
       "https://namestone.xyz/api/public_v1/set-name",
